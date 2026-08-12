@@ -1,7 +1,6 @@
-// Cambiá esta dirección cuando publiques el backend.
-// Desarrollo local:
-const SERVER_URL = "ws://localhost:8080";
-// Producción (ejemplo): const SERVER_URL = "wss://tu-servidor.example.com";
+const SUPABASE_URL = "https://cemxebmssszbdcddzdye.supabase.co";
+const SUPABASE_KEY = "sb_publishable_tOtHYdFRu_EFbxwaLgph9w_4CyW0Ebq";
+const ROOM_NAME = "servidor-escolar-publico";
 
 const NAME_KEY = "servidorEscolarChatName";
 const MAX_NAME_LENGTH = 24;
@@ -19,9 +18,9 @@ const changeNameButton = document.getElementById("changeNameButton");
 const connectionStatus = document.getElementById("connectionStatus");
 const errorMessage = document.getElementById("errorMessage");
 
-let socket = null;
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let channel = null;
 let currentName = "";
-let reconnectTimer = null;
 let manualClose = false;
 
 function sanitizePlainText(value, maxLength) {
@@ -77,118 +76,64 @@ function setChatEnabled(enabled) {
   sendButton.disabled = !enabled;
 }
 
-function connect() {
-  if (!currentName || manualClose) {
-    return;
-  }
+async function connect() {
+  if (!currentName || manualClose) return;
 
-  if (socket && (socket.readyState === WebSocket.OPEN ||
-                 socket.readyState === WebSocket.CONNECTING)) {
-    return;
+  if (channel) {
+    await supabaseClient.removeChannel(channel);
+    channel = null;
   }
 
   setStatus("🟡 Conectando...", "status-connecting");
-
-  try {
-    socket = new WebSocket(SERVER_URL);
-  } catch {
-    setStatus("🔴 Dirección del servidor inválida", "status-offline");
-    scheduleReconnect();
-    return;
-  }
-
-  socket.addEventListener("open", () => {
-    setStatus("🟢 Conectado", "status-online");
-    setChatEnabled(true);
-    showError("");
-
-    socket.send(JSON.stringify({
-      type: "join",
-      name: currentName
-    }));
-  });
-
-  socket.addEventListener("message", (event) => {
-    let data;
-
-    try {
-      data = JSON.parse(event.data);
-    } catch {
-      return;
-    }
-
-    if (data.type === "system") {
-      addSystemMessage(data.text);
-      return;
-    }
-
-    if (data.type === "message") {
-      addChatMessage(data.name, data.text);
-      return;
-    }
-
-    if (data.type === "error") {
-      showError(data.text || "El servidor rechazó la operación.");
-    }
-  });
-
-  socket.addEventListener("close", () => {
-    setChatEnabled(false);
-    setStatus("🔴 Desconectado", "status-offline");
-    socket = null;
-
-    if (!manualClose) {
-      scheduleReconnect();
-    }
-  });
-
-  socket.addEventListener("error", () => {
-    setChatEnabled(false);
-    setStatus("🔴 Error de conexión", "status-offline");
-  });
-}
-
-function scheduleReconnect() {
-  if (reconnectTimer || manualClose || !currentName) {
-    return;
-  }
-
-  reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
-    connect();
-  }, 2500);
-}
-
-function enterChat(name) {
-  const cleanName = sanitizePlainText(name, MAX_NAME_LENGTH);
-
-  if (!cleanName) {
-    showError("Escribí un nombre o apodo.");
-    nameInput.focus();
-    return;
-  }
-
-  currentName = cleanName;
-  localStorage.setItem(NAME_KEY, currentName);
-
-  namePanel.classList.add("hidden");
-  chatPanel.classList.remove("hidden");
+  setChatEnabled(false);
   showError("");
-  connect();
-  messageInput.focus();
+
+  channel = supabaseClient.channel(ROOM_NAME, {
+    config: {
+      broadcast: {
+        self: true,
+        ack: true
+      }
+    }
+  });
+
+  channel.on("broadcast", { event: "message" }, ({ payload }) => {
+    if (!payload || typeof payload !== "object") return;
+
+    const name = sanitizePlainText(payload.name, MAX_NAME_LENGTH);
+    const text = sanitizePlainText(payload.text, MAX_MESSAGE_LENGTH);
+
+    if (!name || !text) return;
+    addChatMessage(name, text);
+  });
+
+  channel.on("broadcast", { event: "system" }, ({ payload }) => {
+    if (!payload || typeof payload.text !== "string") return;
+    addSystemMessage(sanitizePlainText(payload.text, 200));
+  });
+
+  channel.subscribe(async (status, error) => {
+    if (status === "SUBSCRIBED") {
+      setStatus("🟢 Conectado", "status-online");
+      setChatEnabled(true);
+      showError("");
+      return;
+    }
+
+    if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+      setChatEnabled(false);
+      setStatus("🔴 Error de conexión", "status-offline");
+      showError(error?.message || "No se pudo conectar al chat.");
+    }
+  });
 }
 
-function leaveChat() {
+async function leaveChat() {
   manualClose = true;
 
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
-  }
-
-  if (socket) {
-    socket.close();
-    socket = null;
+  if (channel) {
+    await supabaseClient.removeChannel(channel);
+    channel = null;
   }
 
   currentName = "";
@@ -205,29 +150,54 @@ function leaveChat() {
   manualClose = false;
 }
 
+async function enterChat(name) {
+  const cleanName = sanitizePlainText(name, MAX_NAME_LENGTH);
+
+  if (!cleanName) {
+    showError("Escribí un nombre o apodo.");
+    nameInput.focus();
+    return;
+  }
+
+  currentName = cleanName;
+  localStorage.setItem(NAME_KEY, currentName);
+
+  namePanel.classList.add("hidden");
+  chatPanel.classList.remove("hidden");
+  showError("");
+  await connect();
+  messageInput.focus();
+}
+
 nameForm.addEventListener("submit", (event) => {
   event.preventDefault();
   enterChat(nameInput.value);
 });
 
-messageForm.addEventListener("submit", (event) => {
+messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const text = sanitizePlainText(messageInput.value, MAX_MESSAGE_LENGTH);
+  if (!text) return;
 
-  if (!text) {
+  if (!channel) {
+    showError("Todavía no estás conectado al chat.");
     return;
   }
 
-  if (!socket || socket.readyState !== WebSocket.OPEN) {
-    showError("Todavía no estás conectado al servidor.");
+  const response = await channel.send({
+    type: "broadcast",
+    event: "message",
+    payload: {
+      name: currentName,
+      text
+    }
+  });
+
+  if (response !== "ok") {
+    showError("No se pudo enviar el mensaje.");
     return;
   }
-
-  socket.send(JSON.stringify({
-    type: "message",
-    text
-  }));
 
   messageInput.value = "";
   messageInput.focus();
@@ -237,8 +207,8 @@ changeNameButton.addEventListener("click", leaveChat);
 
 window.addEventListener("beforeunload", () => {
   manualClose = true;
-  if (socket) {
-    socket.close();
+  if (channel) {
+    supabaseClient.removeChannel(channel);
   }
 });
 
