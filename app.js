@@ -5,6 +5,7 @@ const ROOM_NAME = "servidor-escolar-publico";
 const NAME_KEY = "servidorEscolarChatName";
 const MAX_NAME_LENGTH = 24;
 const MAX_MESSAGE_LENGTH = 500;
+const HISTORY_LIMIT = 100;
 
 const namePanel = document.getElementById("namePanel");
 const nameForm = document.getElementById("nameForm");
@@ -47,9 +48,12 @@ function addSystemMessage(text) {
   scrollToBottom();
 }
 
-function addChatMessage(name, text) {
+function addChatMessage(name, text, messageId = null) {
+  if (messageId && document.querySelector(`[data-message-id="${messageId}"]`)) return;
+
   const wrapper = document.createElement("article");
   wrapper.className = "message";
+  if (messageId) wrapper.dataset.messageId = messageId;
   if (name === currentName) {
     wrapper.classList.add("mine");
   }
@@ -76,6 +80,30 @@ function setChatEnabled(enabled) {
   sendButton.disabled = !enabled;
 }
 
+async function loadHistory() {
+  const { data, error } = await supabaseClient
+    .from("chat_messages")
+    .select("id, name, text, created_at")
+    .order("created_at", { ascending: false })
+    .limit(HISTORY_LIMIT);
+
+  if (error) {
+    console.error("Error cargando historial:", error);
+    showError("No se pudo cargar el historial.");
+    return;
+  }
+
+  messages.replaceChildren();
+
+  for (const message of [...data].reverse()) {
+    const name = sanitizePlainText(message.name, MAX_NAME_LENGTH);
+    const text = sanitizePlainText(message.text, MAX_MESSAGE_LENGTH);
+    if (name && text) addChatMessage(name, text, message.id);
+  }
+
+  scrollToBottom();
+}
+
 async function connect() {
   if (!currentName || manualClose) return;
 
@@ -84,9 +112,11 @@ async function connect() {
     channel = null;
   }
 
-  setStatus("🟡 Conectando...", "status-connecting");
+  setStatus("🟡 Cargando historial...", "status-connecting");
   setChatEnabled(false);
   showError("");
+
+  await loadHistory();
 
   channel = supabaseClient.channel(ROOM_NAME, {
     config: {
@@ -97,20 +127,19 @@ async function connect() {
     }
   });
 
-  channel.on("broadcast", { event: "message" }, ({ payload }) => {
-    if (!payload || typeof payload !== "object") return;
+  channel.on(
+    "postgres_changes",
+    { event: "INSERT", schema: "public", table: "chat_messages" },
+    ({ new: message }) => {
+      if (!message) return;
 
-    const name = sanitizePlainText(payload.name, MAX_NAME_LENGTH);
-    const text = sanitizePlainText(payload.text, MAX_MESSAGE_LENGTH);
+      const name = sanitizePlainText(message.name, MAX_NAME_LENGTH);
+      const text = sanitizePlainText(message.text, MAX_MESSAGE_LENGTH);
 
-    if (!name || !text) return;
-    addChatMessage(name, text);
-  });
-
-  channel.on("broadcast", { event: "system" }, ({ payload }) => {
-    if (!payload || typeof payload.text !== "string") return;
-    addSystemMessage(sanitizePlainText(payload.text, 200));
-  });
+      if (!name || !text) return;
+      addChatMessage(name, text, message.id);
+    }
+  );
 
   channel.subscribe(async (status, error) => {
     if (status === "SUBSCRIBED") {
@@ -185,17 +214,16 @@ messageForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const response = await channel.send({
-    type: "broadcast",
-    event: "message",
-    payload: {
+  const { error } = await supabaseClient
+    .from("chat_messages")
+    .insert({
       name: currentName,
       text
-    }
-  });
+    });
 
-  if (response !== "ok") {
-    showError("No se pudo enviar el mensaje.");
+  if (error) {
+    console.error("Error guardando mensaje:", error);
+    showError("No se pudo guardar el mensaje.");
     return;
   }
 
