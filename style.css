@@ -4,13 +4,11 @@
   background: #eef2f7;
   line-height: 1.4;
 }
-
 * { box-sizing: border-box; }
 html, body { height: 100%; overflow: hidden; }
 body { margin: 0; min-height: 100%; background: radial-gradient(circle at top left, #dcecff 0, transparent 38%), radial-gradient(circle at bottom right, #e8ddff 0, transparent 35%), #eef2f7; }
 button, input { font: inherit; }
 button { cursor: pointer; }
-
 .app-shell { height: 100dvh; display: grid; place-items: center; padding: 24px; overflow: hidden; }
 .chat-card { width: min(900px, 100%); height: min(760px, calc(100dvh - 48px)); min-height: 520px; display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid #dfe5ee; border-radius: 22px; box-shadow: 0 20px 60px rgba(30, 45, 70, 0.12); }
 .chat-header { flex: 0 0 auto; min-height: 82px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 22px; border-bottom: 1px solid #e7ebf1; background: rgba(255, 255, 255, 0.96); }
@@ -42,18 +40,21 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.55; }
 .error-message { min-height: 18px; margin: 0; padding: 0 14px 10px; color: #c23b4a; font-size: 0.82rem; }
 .hidden { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-
-.meme-dialog { width: min(720px, calc(100vw - 28px)); max-height: min(760px, calc(100dvh - 28px)); padding: 20px; border: 1px solid #dfe5ee; border-radius: 20px; background: #fff; color: #172033; box-shadow: 0 24px 80px rgba(20, 30, 50, 0.25); }
-.meme-dialog::backdrop { background: rgba(10, 18, 30, 0.55); backdrop-filter: blur(3px); }
+.meme-dialog, .admin-dialog { width: min(720px, calc(100vw - 28px)); max-height: min(760px, calc(100dvh - 28px)); padding: 20px; border: 1px solid #dfe5ee; border-radius: 20px; background: #fff; color: #172033; box-shadow: 0 24px 80px rgba(20, 30, 50, 0.25); }
+.meme-dialog::backdrop, .admin-dialog::backdrop { background: rgba(10, 18, 30, 0.55); backdrop-filter: blur(3px); }
 .meme-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.meme-dialog h2 { margin: 0; }
+.meme-dialog h2, .admin-dialog h2 { margin: 0; }
 .meme-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; max-height: 55dvh; overflow-y: auto; padding: 2px; }
 .meme-option { display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 7px; color: #172033; background: #f5f7fb; border: 1px solid #dfe5ee; border-radius: 12px; text-align: left; transition: transform .15s ease, box-shadow .15s ease; }
 .meme-option:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(30,45,70,.12); }
 .meme-option img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; background: #e9edf3; }
 .meme-option span { font-size: .78rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meme-image { display: block; max-width: min(100%, 620px); width: auto; max-height: 420px; border-radius: 14px; object-fit: contain; background: #fff; border: 1px solid #e1e6ee; }
-
+.admin-section { margin-top: 18px; }
+.admin-stat { padding: 14px; margin: 0 0 14px; background: #f5f7fb; border: 1px solid #dfe5ee; border-radius: 12px; font-weight: 800; }
+.admin-actions { display: grid; gap: 10px; }
+.admin-actions button { padding: 12px 14px; color: #172033; background: #f1f4f8; border: 1px solid #dce2ea; border-radius: 12px; font-weight: 700; }
+.admin-actions .danger-button { color: #fff; background: #c23b4a; border-color: #c23b4a; }
 @media (max-width: 700px) { .meme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) {
   .app-shell { padding: 0; }
@@ -68,6 +69,6 @@ button:disabled, input:disabled { cursor: not-allowed; opacity: 0.55; }
   .message { max-width: 88%; }
   .message-form { padding: 10px; }
   .message-form button { padding-inline: 14px; }
-  .meme-dialog { padding: 14px; border-radius: 16px; }
+  .meme-dialog, .admin-dialog { padding: 14px; border-radius: 16px; }
   .meme-grid { max-height: 62dvh; gap: 8px; }
 }
