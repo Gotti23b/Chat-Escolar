@@ -5,183 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Chat grupal experimental en tiempo real">
   <title>Chat Grupal</title>
-  <link rel="stylesheet" href="style.css?v=admin3">
+  <link rel="stylesheet" href="style.css?v=admin4">
   <style>
-    .admin-users-box{margin-top:18px;padding:14px;border:1px solid rgba(0,0,0,.12);border-radius:14px;background:rgba(0,0,0,.025)}
-    .admin-users-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-    .admin-users-heading span{min-width:28px;text-align:center;padding:3px 8px;border-radius:999px;background:#111;color:#fff;font-size:.85rem}
-    .admin-users-list{display:flex;flex-direction:column;gap:8px}
-    .admin-user-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.08)}
-    .admin-kick-button{padding:6px 10px!important;font-size:.85rem!important}
-    .kicked-overlay{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(0,0,0,.55);backdrop-filter:blur(5px);padding:20px}
-    .kicked-card{width:min(420px,100%);padding:28px;border-radius:22px;background:#fff;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-    .kicked-icon{font-size:3rem;margin-bottom:8px}.kicked-card h2{margin:0 0 8px}.kicked-card p{margin:0 0 20px}.kicked-card button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
+    .admin-users-box{margin-top:18px;padding:14px;border:1px solid #29364a;border-radius:14px;background:#0a111b}.admin-users-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.admin-users-heading span{min-width:28px;text-align:center;padding:3px 8px;border-radius:999px;background:#39e7ff;color:#061018;font-size:.85rem}.admin-users-list{display:flex;flex-direction:column;gap:8px}.admin-user-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-radius:10px;background:#121b28;border:1px solid #29364a}.admin-kick-button{padding:6px 10px!important;font-size:.85rem!important}.kicked-overlay{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(0,0,0,.72);backdrop-filter:blur(7px);padding:20px}.kicked-card{width:min(420px,100%);padding:28px;border-radius:22px;background:#0d141f;color:#e8eef8;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid #29364a}.kicked-icon{font-size:3rem;margin-bottom:8px}.kicked-card h2{margin:0 0 8px}.kicked-card p{margin:0 0 20px;color:#8c99ae}.kicked-card button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:#39e7ff;color:#061018}
   </style>
 </head>
 <body>
   <main class="app-shell">
     <section class="chat-card" aria-label="Chat Grupal">
       <header class="chat-header">
-        <div>
-          <h1>💬 Chat Grupal</h1>
-          <p id="connectionStatus" class="status status-offline">🔴 Desconectado</p>
-        </div>
-        <div class="header-actions">
-          <button id="adminButton" class="secondary-button" type="button">🔐 Admin</button>
-          <button id="memeButton" class="secondary-button" type="button" disabled>😂 Memes</button>
-          <button id="changeNameButton" class="secondary-button" type="button">Cambiar nombre</button>
-        </div>
+        <div><h1>💬 Chat Grupal</h1><p id="connectionStatus" class="status status-offline">🔴 Desconectado</p></div>
+        <div class="header-actions"><button id="adminButton" class="secondary-button" type="button">🔐 Admin</button><button id="memeButton" class="secondary-button" type="button" disabled>😂 Memes</button><button id="changeNameButton" class="secondary-button" type="button">Cambiar nombre</button></div>
       </header>
-
-      <div id="namePanel" class="name-panel">
-        <form id="nameForm" class="name-form">
-          <label for="nameInput">¿Cómo te llamás?</label>
-          <div class="name-row">
-            <input id="nameInput" name="name" type="text" maxlength="24" autocomplete="nickname" placeholder="Gotti23b" required>
-            <button type="submit">Entrar</button>
-          </div>
-          <p class="hint">Tu nombre se guarda solamente en este navegador.</p>
-        </form>
-      </div>
-
-      <section id="chatPanel" class="chat-panel hidden">
-        <div id="messages" class="messages" aria-live="polite" aria-label="Mensajes del chat"></div>
-        <form id="messageForm" class="message-form">
-          <label class="sr-only" for="messageInput">Mensaje</label>
-          <input id="messageInput" name="message" type="text" maxlength="500" autocomplete="off" placeholder="Escribí un mensaje..." disabled>
-          <button id="sendButton" type="submit" disabled>Enviar</button>
-        </form>
-        <p id="errorMessage" class="error-message" role="alert"></p>
-      </section>
+      <div id="namePanel" class="name-panel"><form id="nameForm" class="name-form"><label for="nameInput">¿Cómo te llamás?</label><div class="name-row"><input id="nameInput" name="name" type="text" maxlength="24" autocomplete="nickname" placeholder="Gotti23b" required><button type="submit">Entrar</button></div><p class="hint">Tu nombre se guarda solamente en este navegador.</p></form></div>
+      <section id="chatPanel" class="chat-panel hidden"><div id="messages" class="messages" aria-live="polite" aria-label="Mensajes del chat"></div><form id="messageForm" class="message-form"><label class="sr-only" for="messageInput">Mensaje</label><input id="messageInput" name="message" type="text" maxlength="500" autocomplete="off" placeholder="Escribí un mensaje..." disabled><button id="sendButton" type="submit" disabled>Enviar</button></form><p id="errorMessage" class="error-message" role="alert"></p></section>
     </section>
-
-    <dialog id="memeDialog" class="meme-dialog">
-      <div class="meme-dialog-header">
-        <h2>😂 Elegí un meme</h2>
-        <button id="closeMemeButton" class="secondary-button" type="button">Cerrar</button>
-      </div>
-      <p class="hint">Se genera con Memegen y se manda como imagen al chat.</p>
-      <div class="meme-grid" id="memeGrid"></div>
-    </dialog>
-
-    <dialog id="adminDialog" class="admin-dialog">
-      <div class="meme-dialog-header">
-        <h2>🔐 Administración</h2>
-        <button id="closeAdminButton" class="secondary-button" type="button">Cerrar</button>
-      </div>
-      <div id="adminLogin" class="admin-section">
-        <p class="hint">Acceso privado del administrador.</p>
-        <form id="adminLoginForm" class="name-form">
-          <label for="adminCodeInput">Código único</label>
-          <div class="name-row">
-            <input id="adminCodeInput" type="password" autocomplete="off" placeholder="Código" required>
-            <button type="submit">Entrar</button>
-          </div>
-          <p id="adminError" class="error-message" role="alert"></p>
-        </form>
-      </div>
-      <div id="adminPanel" class="admin-section hidden">
-        <p id="adminStats" class="admin-stat">Mensajes: —</p>
-        <div class="admin-actions">
-          <button id="refreshStatsButton" type="button">🔄 Actualizar contador</button>
-          <button id="announceButton" type="button">📢 Enviar aviso</button>
-          <button id="clearHistoryButton" type="button" class="danger-button">🧹 Vaciar historial</button>
-        </div>
-        <p class="hint">Las acciones administrativas se ejecutan en el servidor.</p>
-        <div id="adminUsersBox" class="admin-users-box">
-          <div class="admin-users-heading"><strong>👥 Usuarios conectados</strong><span id="adminUsersCount">0</span></div>
-          <div id="adminUsersList" class="admin-users-list"><p class="hint">Cargando usuarios...</p></div>
-        </div>
-      </div>
-    </dialog>
+    <dialog id="memeDialog" class="meme-dialog"><div class="meme-dialog-header"><h2>😂 Elegí un meme</h2><button id="closeMemeButton" class="secondary-button" type="button">Cerrar</button></div><p class="hint">Se genera con Memegen y se manda como imagen al chat.</p><div class="meme-grid" id="memeGrid"></div></dialog>
+    <dialog id="adminDialog" class="admin-dialog"><div class="meme-dialog-header"><h2>🔐 Administración</h2><button id="closeAdminButton" class="secondary-button" type="button">Cerrar</button></div><div id="adminLogin" class="admin-section"><p class="hint">Acceso privado del administrador.</p><form id="adminLoginForm" class="name-form"><label for="adminCodeInput">Código único</label><div class="name-row"><input id="adminCodeInput" type="password" autocomplete="off" placeholder="Código" required><button type="submit">Entrar</button></div><p id="adminError" class="error-message" role="alert"></p></form></div><div id="adminPanel" class="admin-section hidden"><p id="adminStats" class="admin-stat">Mensajes: —</p><div class="admin-actions"><button id="refreshStatsButton" type="button">🔄 Actualizar contador</button><button id="announceButton" type="button">📢 Enviar aviso</button><button id="clearHistoryButton" type="button" class="danger-button">🧹 Vaciar historial</button></div><p class="hint">Las acciones administrativas se ejecutan en el servidor.</p><div id="adminUsersBox" class="admin-users-box"><div class="admin-users-heading"><strong>👥 Usuarios conectados</strong><span id="adminUsersCount">0</span></div><div id="adminUsersList" class="admin-users-list"><p class="hint">Cargando usuarios...</p></div></div></div></dialog>
   </main>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=admin3"></script>
+  <script src="app.js?v=admin4"></script>
   <script>
-    // Fallback de apertura del panel Admin.
     (() => {
-      const button = document.getElementById('adminButton');
-      const dialog = document.getElementById('adminDialog');
-      const close = document.getElementById('closeAdminButton');
-      if (!button || !dialog) return;
-      button.addEventListener('click', () => {
-        if (typeof dialog.showModal === 'function') { if (!dialog.open) dialog.showModal(); }
-        else dialog.setAttribute('open', '');
-        const input = document.getElementById('adminCodeInput');
-        if (input) setTimeout(() => input.focus(), 50);
-      });
-      if (close) close.addEventListener('click', () => dialog.close ? dialog.close() : dialog.removeAttribute('open'));
+      const button=document.getElementById('adminButton'),dialog=document.getElementById('adminDialog'),close=document.getElementById('closeAdminButton');
+      if(!button||!dialog)return;
+      button.addEventListener('click',()=>{if(typeof dialog.showModal==='function'){if(!dialog.open)dialog.showModal()}else dialog.setAttribute('open','');const input=document.getElementById('adminCodeInput');if(input)setTimeout(()=>input.focus(),50)});
+      if(close)close.addEventListener('click',()=>dialog.close?dialog.close():dialog.removeAttribute('open'));
     })();
   </script>
   <script>
-    // Presencia + lista de usuarios + expulsión temporal. Todo vive en Prueba.
     (() => {
-      const URL = 'https://cemxebmssszbdcddzdye.supabase.co';
-      const KEY = 'sb_publishable_tOtHYdFRu_EFbxwaLgph9w_4CyW0Ebq';
-      const ROOM = 'servidor-escolar-publico-presence';
-      const client = window.supabase.createClient(URL, KEY);
-      const sessionId = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random());
-      let channel = null;
-      let kicked = false;
-      const name = () => String(localStorage.getItem('servidorEscolarChatName') || 'Usuario').trim().slice(0,24) || 'Usuario';
-      const code = () => document.getElementById('adminCodeInput')?.value?.trim() || '';
-      const list = document.getElementById('adminUsersList');
-      const count = document.getElementById('adminUsersCount');
-
-      function renderUsers(){
-        if(!channel || !list) return;
-        const state = channel.presenceState();
-        const users=[];
-        Object.entries(state).forEach(([key,entries])=>{
-          const e=entries?.[0]; if(!e) return;
-          users.push({id:e.sessionId||key,name:String(e.name||'Usuario').slice(0,24)});
-        });
-        users.sort((a,b)=>a.name.localeCompare(b.name,'es'));
-        count.textContent=String(users.length); list.replaceChildren();
-        if(!users.length){const p=document.createElement('p');p.className='hint';p.textContent='No hay usuarios conectados.';list.appendChild(p);return;}
-        users.forEach(u=>{
-          const row=document.createElement('div');row.className='admin-user-row';
-          const label=document.createElement('span');label.textContent=u.name+(u.id===sessionId?' (vos)':'');
-          const kick=document.createElement('button');kick.type='button';kick.className='danger-button admin-kick-button';kick.textContent='🚪 Echar';kick.disabled=u.id===sessionId;
-          kick.addEventListener('click',async()=>{
-            if(!document.getElementById('adminPanel') || document.getElementById('adminPanel').classList.contains('hidden')) return;
-            if(!code()) { alert('Volvé a iniciar sesión como Admin.'); return; }
-            if(!confirm('¿Echar a '+u.name+' hasta que recargue la página?')) return;
-            try{
-              const res=await fetch(URL+'/functions/v1/chat-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code(),action:'kick',sessionId:u.id,name:u.name})});
-              const data=await res.json().catch(()=>({})); if(!res.ok) throw new Error(data.error||'No se pudo echar al usuario.');
-              alert('🚪 '+u.name+' fue echado.');
-            }catch(e){alert(e.message||'No se pudo echar al usuario.');}
-          });
-          row.append(label,kick);list.appendChild(row);
-        });
-      }
-
-      function handleKick(payload){
-        if(!payload || payload.targetSessionId!==sessionId || kicked) return;
-        kicked=true;
-        try{channel?.untrack();}catch{}
-        try{if(channel) client.removeChannel(channel);}catch{}
-        channel=null;
-        document.getElementById('chatPanel')?.classList.add('hidden');
-        ['messageInput','sendButton','memeButton'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
-        const old=document.getElementById('kickedOverlay');if(old)old.remove();
-        const overlay=document.createElement('div');overlay.id='kickedOverlay';overlay.className='kicked-overlay';
-        overlay.innerHTML='<div class="kicked-card"><div class="kicked-icon">🚪</div><h2>Te echaron del chat</h2><p>Podés volver a entrar cuando recargues la página.</p><button type="button" id="reloadAfterKick">🔄 Recargar</button></div>';
-        document.body.appendChild(overlay);
-        document.getElementById('reloadAfterKick')?.addEventListener('click',()=>location.reload());
-      }
-
-      async function connect(){
-        channel=client.channel(ROOM,{config:{presence:{key:sessionId},broadcast:{self:false}}});
-        channel.on('presence',{event:'sync'},renderUsers).on('presence',{event:'join'},renderUsers).on('presence',{event:'leave'},renderUsers).on('broadcast',{event:'kick'},({payload})=>handleKick(payload));
-        channel.subscribe(async status=>{if(status==='SUBSCRIBED'){await channel.track({sessionId:sessionId,name:name(),onlineAt:Date.now()});renderUsers();}});
-      }
-
-      connect();
-      const adminPanel=document.getElementById('adminPanel');
-      if(adminPanel){new MutationObserver(()=>{if(!adminPanel.classList.contains('hidden'))renderUsers();}).observe(adminPanel,{attributes:true,attributeFilter:['class']});}
+      const URL='https://cemxebmssszbdcddzdye.supabase.co',KEY='sb_publishable_tOtHYdFRu_EFbxwaLgph9w_4CyW0Ebq',ROOM='servidor-escolar-publico-presence';
+      const client=window.supabase.createClient(URL,KEY); const sessionId=crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random(); let channel=null,kicked=false;
+      const name=()=>String(localStorage.getItem('servidorEscolarChatName')||'Usuario').trim().slice(0,24)||'Usuario';
+      const list=document.getElementById('adminUsersList'),count=document.getElementById('adminUsersCount');
+      function renderUsers(){if(!channel||!list)return;const state=channel.presenceState(),users=[];Object.entries(state).forEach(([key,entries])=>{const e=entries?.[0];if(!e)return;users.push({id:e.sessionId||key,name:String(e.name||'Usuario').slice(0,24)})});users.sort((a,b)=>a.name.localeCompare(b.name,'es'));count.textContent=String(users.length);list.replaceChildren();if(!users.length){const p=document.createElement('p');p.className='hint';p.textContent='No hay usuarios conectados.';list.appendChild(p);return}users.forEach(u=>{const row=document.createElement('div');row.className='admin-user-row';const label=document.createElement('span');label.textContent=u.name+(u.id===sessionId?' (vos)':'');const kick=document.createElement('button');kick.type='button';kick.className='danger-button admin-kick-button';kick.textContent='🚪 Echar';kick.disabled=u.id===sessionId;kick.addEventListener('click',async()=>{const code=document.getElementById('adminCodeInput')?.value?.trim();if(!code){alert('Volvé a iniciar sesión como Admin.');return}if(!confirm('¿Echar a '+u.name+' hasta que recargue la página?'))return;try{const check=await fetch(URL+'/functions/v1/chat-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,action:'stats'})});if(!check.ok)throw new Error('Acceso Admin inválido.');const result=await channel.send({type:'broadcast',event:'kick',payload:{targetSessionId:u.id}});if(result!=='ok')throw new Error('No se pudo enviar la orden.');alert('🚪 '+u.name+' fue echado.')}catch(e){alert(e.message||'No se pudo echar al usuario.')}});row.append(label,kick);list.appendChild(row)})}
+      function handleKick(payload){if(!payload||payload.targetSessionId!==sessionId||kicked)return;kicked=true;try{channel?.untrack()}catch{}try{if(channel)client.removeChannel(channel)}catch{}channel=null;document.getElementById('chatPanel')?.classList.add('hidden');['messageInput','sendButton','memeButton'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true});const old=document.getElementById('kickedOverlay');if(old)old.remove();const overlay=document.createElement('div');overlay.id='kickedOverlay';overlay.className='kicked-overlay';overlay.innerHTML='<div class="kicked-card"><div class="kicked-icon">🚪</div><h2>Te echaron del chat</h2><p>Podés volver a entrar cuando recargues la página.</p><button type="button" id="reloadAfterKick">🔄 Recargar</button></div>';document.body.appendChild(overlay);document.getElementById('reloadAfterKick')?.addEventListener('click',()=>location.reload())}
+      async function connect(){channel=client.channel(ROOM,{config:{presence:{key:sessionId},broadcast:{self:true,ack:true}}});channel.on('presence',{event:'sync'},renderUsers).on('presence',{event:'join'},renderUsers).on('presence',{event:'leave'},renderUsers).on('broadcast',{event:'kick'},({payload})=>handleKick(payload));channel.subscribe(async status=>{if(status==='SUBSCRIBED'){await channel.track({sessionId,name:name(),onlineAt:Date.now()});renderUsers()}})}
+      connect();const adminPanel=document.getElementById('adminPanel');if(adminPanel)new MutationObserver(()=>{if(!adminPanel.classList.contains('hidden'))renderUsers()}).observe(adminPanel,{attributes:true,attributeFilter:['class']});
     })();
   </script>
 </body>
