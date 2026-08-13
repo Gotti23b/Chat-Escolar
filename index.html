@@ -8,13 +8,14 @@
   <link rel="stylesheet" href="style.css?v=admin4">
   <style>
     .admin-users-box{margin-top:18px;padding:14px;border:1px solid #29364a;border-radius:14px;background:#0a111b}.admin-users-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.admin-users-heading span{min-width:28px;text-align:center;padding:3px 8px;border-radius:999px;background:#39e7ff;color:#061018;font-size:.85rem}.admin-users-list{display:flex;flex-direction:column;gap:8px}.admin-user-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-radius:10px;background:#121b28;border:1px solid #29364a}.admin-kick-button{padding:6px 10px!important;font-size:.85rem!important}.kicked-overlay{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(0,0,0,.72);backdrop-filter:blur(7px);padding:20px}.kicked-card{width:min(420px,100%);padding:28px;border-radius:22px;background:#0d141f;color:#e8eef8;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid #29364a}.kicked-icon{font-size:3rem;margin-bottom:8px}.kicked-card h2{margin:0 0 8px}.kicked-card p{margin:0 0 20px;color:#8c99ae}.kicked-card button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:#39e7ff;color:#061018}
+    .luma-trigger{border:0;background:none;color:inherit;padding:0;margin:0;font:inherit;font-weight:800;cursor:pointer}.luma-trigger:hover{color:#39e7ff}.luma-stage{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow:hidden;background:#02060b;opacity:0;animation:lumaIn .7s ease forwards}.luma-stage canvas{position:absolute;inset:0;width:100%;height:100%}.luma-core{position:relative;text-align:center;user-select:none;animation:lumaFloat 3s ease-in-out infinite}.luma-word{margin:0;font-size:clamp(5rem,18vw,15rem);font-weight:1000;letter-spacing:.18em;color:#e9fdff;text-shadow:0 0 12px #39e7ff,0 0 45px rgba(57,231,255,.8),0 0 120px rgba(57,231,255,.35)}.luma-sub{margin:.3rem 0 0;color:#6d849d;letter-spacing:.45em;text-transform:uppercase;font-size:clamp(.65rem,1.5vw,1rem)}.luma-close{position:absolute;right:22px;top:18px;z-index:2;border:1px solid #233448;background:rgba(7,14,23,.72);color:#b8d4e2;border-radius:999px;padding:9px 13px;cursor:pointer}.luma-close:hover{border-color:#39e7ff;color:#fff}.luma-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);padding:9px 14px;border:1px solid #20374a;border-radius:999px;background:rgba(6,13,21,.8);color:#7f9db0;font-size:.78rem;backdrop-filter:blur(8px)}@keyframes lumaIn{to{opacity:1}}@keyframes lumaFloat{50%{transform:translateY(-10px) scale(1.015)}}
   </style>
 </head>
 <body>
   <main class="app-shell">
     <section class="chat-card" aria-label="Chat Grupal">
       <header class="chat-header">
-        <div><h1>💬 Chat Grupal</h1><p id="connectionStatus" class="status status-offline">🔴 Desconectado</p></div>
+        <div><h1><button id="lumaTrigger" class="luma-trigger" type="button" title="¿Hay un secreto acá?">💬 Chat Grupal</button></h1><p id="connectionStatus" class="status status-offline">🔴 Desconectado</p></div>
         <div class="header-actions"><button id="adminButton" class="secondary-button" type="button">🔐 Admin</button><button id="memeButton" class="secondary-button" type="button" disabled>😂 Memes</button><button id="changeNameButton" class="secondary-button" type="button">Cambiar nombre</button></div>
       </header>
       <div id="namePanel" class="name-panel"><form id="nameForm" class="name-form"><label for="nameInput">¿Cómo te llamás?</label><div class="name-row"><input id="nameInput" name="name" type="text" maxlength="24" autocomplete="nickname" placeholder="Gotti23b" required><button type="submit">Entrar</button></div><p class="hint">Tu nombre se guarda solamente en este navegador.</p></form></div>
@@ -43,6 +44,25 @@
       function handleKick(payload){if(!payload||payload.targetSessionId!==sessionId||kicked)return;kicked=true;try{channel?.untrack()}catch{}try{if(channel)client.removeChannel(channel)}catch{}channel=null;document.getElementById('chatPanel')?.classList.add('hidden');['messageInput','sendButton','memeButton'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true});const old=document.getElementById('kickedOverlay');if(old)old.remove();const overlay=document.createElement('div');overlay.id='kickedOverlay';overlay.className='kicked-overlay';overlay.innerHTML='<div class="kicked-card"><div class="kicked-icon">🚪</div><h2>Te echaron del chat</h2><p>Podés volver a entrar cuando recargues la página.</p><button type="button" id="reloadAfterKick">🔄 Recargar</button></div>';document.body.appendChild(overlay);document.getElementById('reloadAfterKick')?.addEventListener('click',()=>location.reload())}
       async function connect(){channel=client.channel(ROOM,{config:{presence:{key:sessionId},broadcast:{self:true,ack:true}}});channel.on('presence',{event:'sync'},renderUsers).on('presence',{event:'join'},renderUsers).on('presence',{event:'leave'},renderUsers).on('broadcast',{event:'kick'},({payload})=>handleKick(payload));channel.subscribe(async status=>{if(status==='SUBSCRIBED'){await channel.track({sessionId,name:name(),onlineAt:Date.now()});renderUsers()}})}
       connect();const adminPanel=document.getElementById('adminPanel');if(adminPanel)new MutationObserver(()=>{if(!adminPanel.classList.contains('hidden'))renderUsers()}).observe(adminPanel,{attributes:true,attributeFilter:['class']});
+    })();
+  </script>
+  <script>
+    (() => {
+      const trigger=document.getElementById('lumaTrigger'); let taps=0,lastTap=0;
+      const openLuma=()=>{
+        if(document.getElementById('lumaStage'))return;
+        const stage=document.createElement('div');stage.id='lumaStage';stage.className='luma-stage';
+        stage.innerHTML='<canvas id="lumaCanvas"></canvas><button class="luma-close" id="lumaClose">ESC · cerrar</button><div class="luma-core"><h2 class="luma-word">LUMA</h2><p class="luma-sub">modo secreto activado</p></div><div class="luma-toast">✨ Encontraste el easter egg</div>';
+        document.body.appendChild(stage);
+        const canvas=document.getElementById('lumaCanvas'),ctx=canvas.getContext('2d'); let w=0,h=0,particles=[];
+        const resize=()=>{w=canvas.width=innerWidth*devicePixelRatio;h=canvas.height=innerHeight*devicePixelRatio;ctx.setTransform(1,0,0,1,0,0);ctx.scale(devicePixelRatio,devicePixelRatio);particles=Array.from({length:Math.min(180,Math.floor(innerWidth/7))},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.8+.3,v:Math.random()*.55+.15,a:Math.random()*Math.PI*2}))};
+        resize();addEventListener('resize',resize,{passive:true});
+        const frame=()=>{if(!document.getElementById('lumaStage'))return;ctx.clearRect(0,0,innerWidth,innerHeight);for(const p of particles){p.y-=p.v;if(p.y<-5)p.y=innerHeight+5;p.a+=.01;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(57,231,255,${.15+.25*Math.sin(p.a)})`;ctx.fill()}requestAnimationFrame(frame)};frame();
+        const close=()=>stage.remove();document.getElementById('lumaClose').onclick=close;stage.addEventListener('click',e=>{if(e.target===stage)close()});
+        const esc=e=>{if(e.key==='Escape'){close();removeEventListener('keydown',esc)}};addEventListener('keydown',esc);
+      };
+      trigger?.addEventListener('click',()=>{const now=Date.now();if(now-lastTap>1200)taps=0;lastTap=now;taps++;if(taps>=5){taps=0;openLuma()}});
+      addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='l')openLuma()});
     })();
   </script>
 </body>
