@@ -5,6 +5,8 @@ const ROOM_NAME = "servidor-escolar-publico";
 const NAME_KEY = "servidorEscolarChatName";
 const MAX_NAME_LENGTH = 24;
 const MAX_MESSAGE_LENGTH = 500;
+const HISTORY_TABLE = "chat_messages";
+const HISTORY_LIMIT = 100;
 
 const namePanel = document.getElementById("namePanel");
 const nameForm = document.getElementById("nameForm");
@@ -26,6 +28,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let channel = null;
 let currentName = "";
 let manualClose = false;
+const renderedMessageIds = new Set();
 
 const MEMES = [
   { name: "This is fine", template: "thisisfine" },
@@ -62,7 +65,10 @@ function addSystemMessage(text) {
   scrollToBottom();
 }
 
-function addChatMessage(name, text) {
+function addChatMessage(name, text, id = null) {
+  if (id && renderedMessageIds.has(id)) return;
+  if (id) renderedMessageIds.add(id);
+
   const wrapper = document.createElement("article");
   wrapper.className = "message";
   if (name === currentName) wrapper.classList.add("mine");
@@ -80,7 +86,10 @@ function addChatMessage(name, text) {
   scrollToBottom();
 }
 
-function addMemeMessage(name, imageUrl) {
+function addMemeMessage(name, imageUrl, id = null) {
+  if (id && renderedMessageIds.has(id)) return;
+  if (id) renderedMessageIds.add(id);
+
   const wrapper = document.createElement("article");
   wrapper.className = "message meme-message";
   if (name === currentName) wrapper.classList.add("mine");
@@ -140,21 +149,73 @@ function openMemePicker() {
   memeDialog.showModal();
 }
 
+async function saveTextMessage(name, text) {
+  const { data, error } = await supabaseClient
+    .from(HISTORY_TABLE)
+    .insert({ name, message_type: "text", text, image_url: null })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
+async function saveMemeMessage(name, imageUrl) {
+  const { data, error } = await supabaseClient
+    .from(HISTORY_TABLE)
+    .insert({ name, message_type: "meme", text: null, image_url: imageUrl })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
+async function loadChatHistory() {
+  const { data, error } = await supabaseClient
+    .from(HISTORY_TABLE)
+    .select("id,name,message_type,text,image_url,created_at")
+    .order("created_at", { ascending: false })
+    .limit(HISTORY_LIMIT);
+
+  if (error) throw error;
+
+  renderedMessageIds.clear();
+  messages.replaceChildren();
+
+  for (const row of [...(data || [])].reverse()) {
+    const name = sanitizePlainText(row.name, MAX_NAME_LENGTH);
+    if (!name) continue;
+
+    if (row.message_type === "meme" && typeof row.image_url === "string") {
+      if (row.image_url.startsWith("https://api.memegen.link/")) {
+        addMemeMessage(name, row.image_url, row.id);
+      }
+    } else if (row.message_type === "text" && typeof row.text === "string") {
+      const text = sanitizePlainText(row.text, MAX_MESSAGE_LENGTH);
+      if (text) addChatMessage(name, text, row.id);
+    }
+  }
+}
+
 async function sendMeme(imageUrl) {
   if (!channel || !currentName) return;
 
-  const response = await channel.send({
-    type: "broadcast",
-    event: "meme",
-    payload: { name: currentName, imageUrl }
-  });
+  try {
+    const id = await saveMemeMessage(currentName, imageUrl);
+    const response = await channel.send({
+      type: "broadcast",
+      event: "meme",
+      payload: { id, name: currentName, imageUrl }
+    });
 
-  if (response !== "ok") {
-    showError("No se pudo enviar el meme.");
-    return;
+    if (response !== "ok") {
+      showError("No se pudo enviar el meme.");
+      return;
+    }
+
+    memeDialog.close();
+  } catch (error) {
+    showError(error?.message || "No se pudo guardar el meme.");
   }
-
-  memeDialog.close();
 }
 
 async function connect() {
@@ -169,6 +230,12 @@ async function connect() {
   setChatEnabled(false);
   showError("");
 
+  try {
+    await loadChatHistory();
+  } catch (error) {
+    showError("No se pudo cargar el historial: " + (error?.message || "error desconocido"));
+  }
+
   channel = supabaseClient.channel(ROOM_NAME, {
     config: { broadcast: { self: true, ack: true } }
   });
@@ -178,7 +245,7 @@ async function connect() {
     const name = sanitizePlainText(payload.name, MAX_NAME_LENGTH);
     const text = sanitizePlainText(payload.text, MAX_MESSAGE_LENGTH);
     if (!name || !text) return;
-    addChatMessage(name, text);
+    addChatMessage(name, text, payload.id || null);
   });
 
   channel.on("broadcast", { event: "meme" }, ({ payload }) => {
@@ -186,7 +253,7 @@ async function connect() {
     const name = sanitizePlainText(payload.name, MAX_NAME_LENGTH);
     if (!name || typeof payload.imageUrl !== "string") return;
     if (!payload.imageUrl.startsWith("https://api.memegen.link/")) return;
-    addMemeMessage(name, payload.imageUrl);
+    addMemeMessage(name, payload.imageUrl, payload.id || null);
   });
 
   channel.on("broadcast", { event: "system" }, ({ payload }) => {
@@ -219,6 +286,7 @@ async function leaveChat() {
 
   currentName = "";
   localStorage.removeItem(NAME_KEY);
+  renderedMessageIds.clear();
   messages.replaceChildren();
   setChatEnabled(false);
   setStatus("🔴 Desconectado", "status-offline");
@@ -261,19 +329,24 @@ messageForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const response = await channel.send({
-    type: "broadcast",
-    event: "message",
-    payload: { name: currentName, text }
-  });
+  try {
+    const id = await saveTextMessage(currentName, text);
+    const response = await channel.send({
+      type: "broadcast",
+      event: "message",
+      payload: { id, name: currentName, text }
+    });
 
-  if (response !== "ok") {
-    showError("No se pudo enviar el mensaje.");
-    return;
+    if (response !== "ok") {
+      showError("No se pudo enviar el mensaje.");
+      return;
+    }
+
+    messageInput.value = "";
+    messageInput.focus();
+  } catch (error) {
+    showError(error?.message || "No se pudo guardar el mensaje.");
   }
-
-  messageInput.value = "";
-  messageInput.focus();
 });
 
 memeButton.addEventListener("click", openMemePicker);
