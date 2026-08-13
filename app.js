@@ -17,11 +17,26 @@ const sendButton = document.getElementById("sendButton");
 const changeNameButton = document.getElementById("changeNameButton");
 const connectionStatus = document.getElementById("connectionStatus");
 const errorMessage = document.getElementById("errorMessage");
+const memeButton = document.getElementById("memeButton");
+const memeDialog = document.getElementById("memeDialog");
+const closeMemeButton = document.getElementById("closeMemeButton");
+const memeGrid = document.getElementById("memeGrid");
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let channel = null;
 let currentName = "";
 let manualClose = false;
+
+const MEMES = [
+  { name: "This is fine", template: "thisisfine" },
+  { name: "Drake", template: "drake" },
+  { name: "Distracted boyfriend", template: "db" },
+  { name: "Doge", template: "doge" },
+  { name: "Success", template: "success" },
+  { name: "One does not simply", template: "aag" },
+  { name: "Running away", template: "runningawayball" },
+  { name: "Disaster girl", template: "disastergirl" }
+];
 
 function sanitizePlainText(value, maxLength) {
   return String(value)
@@ -50,9 +65,7 @@ function addSystemMessage(text) {
 function addChatMessage(name, text) {
   const wrapper = document.createElement("article");
   wrapper.className = "message";
-  if (name === currentName) {
-    wrapper.classList.add("mine");
-  }
+  if (name === currentName) wrapper.classList.add("mine");
 
   const nameElement = document.createElement("div");
   nameElement.className = "message-name";
@@ -67,6 +80,26 @@ function addChatMessage(name, text) {
   scrollToBottom();
 }
 
+function addMemeMessage(name, imageUrl) {
+  const wrapper = document.createElement("article");
+  wrapper.className = "message meme-message";
+  if (name === currentName) wrapper.classList.add("mine");
+
+  const nameElement = document.createElement("div");
+  nameElement.className = "message-name";
+  nameElement.textContent = name;
+
+  const image = document.createElement("img");
+  image.className = "meme-image";
+  image.src = imageUrl;
+  image.alt = `Meme enviado por ${name}`;
+  image.loading = "lazy";
+
+  wrapper.append(nameElement, image);
+  messages.appendChild(wrapper);
+  scrollToBottom();
+}
+
 function scrollToBottom() {
   messages.scrollTop = messages.scrollHeight;
 }
@@ -74,6 +107,54 @@ function scrollToBottom() {
 function setChatEnabled(enabled) {
   messageInput.disabled = !enabled;
   sendButton.disabled = !enabled;
+  memeButton.disabled = !enabled;
+}
+
+function createMemeUrl(template) {
+  const top = encodeURIComponent("CUANDO EL CHAT FUNCIONA").replace(/%20/g, "_");
+  const bottom = encodeURIComponent("Y NADIE LO ROMPIÓ").replace(/%20/g, "_");
+  return `https://api.memegen.link/images/${template}/${top}/${bottom}.webp?width=700`;
+}
+
+function openMemePicker() {
+  memeGrid.replaceChildren();
+
+  MEMES.forEach((meme) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "meme-option";
+
+    const image = document.createElement("img");
+    image.src = createMemeUrl(meme.template);
+    image.alt = meme.name;
+    image.loading = "lazy";
+
+    const label = document.createElement("span");
+    label.textContent = meme.name;
+
+    button.append(image, label);
+    button.addEventListener("click", () => sendMeme(createMemeUrl(meme.template)));
+    memeGrid.appendChild(button);
+  });
+
+  memeDialog.showModal();
+}
+
+async function sendMeme(imageUrl) {
+  if (!channel || !currentName) return;
+
+  const response = await channel.send({
+    type: "broadcast",
+    event: "meme",
+    payload: { name: currentName, imageUrl }
+  });
+
+  if (response !== "ok") {
+    showError("No se pudo enviar el meme.");
+    return;
+  }
+
+  memeDialog.close();
 }
 
 async function connect() {
@@ -89,22 +170,23 @@ async function connect() {
   showError("");
 
   channel = supabaseClient.channel(ROOM_NAME, {
-    config: {
-      broadcast: {
-        self: true,
-        ack: true
-      }
-    }
+    config: { broadcast: { self: true, ack: true } }
   });
 
   channel.on("broadcast", { event: "message" }, ({ payload }) => {
     if (!payload || typeof payload !== "object") return;
-
     const name = sanitizePlainText(payload.name, MAX_NAME_LENGTH);
     const text = sanitizePlainText(payload.text, MAX_MESSAGE_LENGTH);
-
     if (!name || !text) return;
     addChatMessage(name, text);
+  });
+
+  channel.on("broadcast", { event: "meme" }, ({ payload }) => {
+    if (!payload || typeof payload !== "object") return;
+    const name = sanitizePlainText(payload.name, MAX_NAME_LENGTH);
+    if (!name || typeof payload.imageUrl !== "string") return;
+    if (!payload.imageUrl.startsWith("https://api.memegen.link/")) return;
+    addMemeMessage(name, payload.imageUrl);
   });
 
   channel.on("broadcast", { event: "system" }, ({ payload }) => {
@@ -130,7 +212,6 @@ async function connect() {
 
 async function leaveChat() {
   manualClose = true;
-
   if (channel) {
     await supabaseClient.removeChannel(channel);
     channel = null;
@@ -141,18 +222,15 @@ async function leaveChat() {
   messages.replaceChildren();
   setChatEnabled(false);
   setStatus("🔴 Desconectado", "status-offline");
-
   chatPanel.classList.add("hidden");
   namePanel.classList.remove("hidden");
   nameInput.value = "";
   nameInput.focus();
-
   manualClose = false;
 }
 
 async function enterChat(name) {
   const cleanName = sanitizePlainText(name, MAX_NAME_LENGTH);
-
   if (!cleanName) {
     showError("Escribí un nombre o apodo.");
     nameInput.focus();
@@ -161,7 +239,6 @@ async function enterChat(name) {
 
   currentName = cleanName;
   localStorage.setItem(NAME_KEY, currentName);
-
   namePanel.classList.add("hidden");
   chatPanel.classList.remove("hidden");
   showError("");
@@ -176,7 +253,6 @@ nameForm.addEventListener("submit", (event) => {
 
 messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-
   const text = sanitizePlainText(messageInput.value, MAX_MESSAGE_LENGTH);
   if (!text) return;
 
@@ -188,10 +264,7 @@ messageForm.addEventListener("submit", async (event) => {
   const response = await channel.send({
     type: "broadcast",
     event: "message",
-    payload: {
-      name: currentName,
-      text
-    }
+    payload: { name: currentName, text }
   });
 
   if (response !== "ok") {
@@ -203,17 +276,16 @@ messageForm.addEventListener("submit", async (event) => {
   messageInput.focus();
 });
 
+memeButton.addEventListener("click", openMemePicker);
+closeMemeButton.addEventListener("click", () => memeDialog.close());
 changeNameButton.addEventListener("click", leaveChat);
 
 window.addEventListener("beforeunload", () => {
   manualClose = true;
-  if (channel) {
-    supabaseClient.removeChannel(channel);
-  }
+  if (channel) supabaseClient.removeChannel(channel);
 });
 
 const savedName = localStorage.getItem(NAME_KEY);
-
 if (savedName) {
   nameInput.value = sanitizePlainText(savedName, MAX_NAME_LENGTH);
   enterChat(nameInput.value);
