@@ -15,7 +15,10 @@
           <h1>💬 Chat Grupal</h1>
           <p id="connectionStatus" class="status status-offline">🔴 Desconectado</p>
         </div>
-        <button id="changeNameButton" class="secondary-button" type="button">Cambiar nombre</button>
+        <div class="header-actions">
+          <button id="memeButton" class="secondary-button" type="button" disabled>😂 Memes</button>
+          <button id="changeNameButton" class="secondary-button" type="button">Cambiar nombre</button>
+        </div>
       </header>
 
       <div id="namePanel" class="name-panel">
@@ -42,6 +45,15 @@
         <p id="errorMessage" class="error-message" role="alert"></p>
       </section>
     </section>
+
+    <dialog id="memeDialog" class="meme-dialog">
+      <div class="meme-dialog-header">
+        <h2>😂 Elegí un meme</h2>
+        <button id="closeMemeButton" class="secondary-button" type="button">Cerrar</button>
+      </div>
+      <p class="hint">Se genera con Memegen y se manda como imagen al chat.</p>
+      <div class="meme-grid" id="memeGrid"></div>
+    </dialog>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
