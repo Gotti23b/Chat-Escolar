@@ -16,6 +16,7 @@
           <p id="connectionStatus" class="status status-offline">🔴 Desconectado</p>
         </div>
         <div class="header-actions">
+          <button id="adminButton" class="secondary-button" type="button">🔐 Admin</button>
           <button id="memeButton" class="secondary-button" type="button" disabled>😂 Memes</button>
           <button id="changeNameButton" class="secondary-button" type="button">Cambiar nombre</button>
         </div>
@@ -25,8 +26,7 @@
         <form id="nameForm" class="name-form">
           <label for="nameInput">¿Cómo te llamás?</label>
           <div class="name-row">
-            <input id="nameInput" name="name" type="text" maxlength="24"
-                   autocomplete="nickname" placeholder="Gotti23b" required>
+            <input id="nameInput" name="name" type="text" maxlength="24" autocomplete="nickname" placeholder="Gotti23b" required>
             <button type="submit">Entrar</button>
           </div>
           <p class="hint">Tu nombre se guarda solamente en este navegador.</p>
@@ -35,11 +35,9 @@
 
       <section id="chatPanel" class="chat-panel hidden">
         <div id="messages" class="messages" aria-live="polite" aria-label="Mensajes del chat"></div>
-
         <form id="messageForm" class="message-form">
           <label class="sr-only" for="messageInput">Mensaje</label>
-          <input id="messageInput" name="message" type="text" maxlength="500"
-                 autocomplete="off" placeholder="Escribí un mensaje..." disabled>
+          <input id="messageInput" name="message" type="text" maxlength="500" autocomplete="off" placeholder="Escribí un mensaje..." disabled>
           <button id="sendButton" type="submit" disabled>Enviar</button>
         </form>
         <p id="errorMessage" class="error-message" role="alert"></p>
@@ -53,6 +51,33 @@
       </div>
       <p class="hint">Se genera con Memegen y se manda como imagen al chat.</p>
       <div class="meme-grid" id="memeGrid"></div>
+    </dialog>
+
+    <dialog id="adminDialog" class="admin-dialog">
+      <div class="meme-dialog-header">
+        <h2>🔐 Administración</h2>
+        <button id="closeAdminButton" class="secondary-button" type="button">Cerrar</button>
+      </div>
+      <div id="adminLogin" class="admin-section">
+        <p class="hint">Acceso privado del administrador.</p>
+        <form id="adminLoginForm" class="name-form">
+          <label for="adminCodeInput">Código único</label>
+          <div class="name-row">
+            <input id="adminCodeInput" type="password" autocomplete="off" placeholder="Código" required>
+            <button type="submit">Entrar</button>
+          </div>
+          <p id="adminError" class="error-message" role="alert"></p>
+        </form>
+      </div>
+      <div id="adminPanel" class="admin-section hidden">
+        <p id="adminStats" class="admin-stat">Mensajes: —</p>
+        <div class="admin-actions">
+          <button id="refreshStatsButton" type="button">🔄 Actualizar contador</button>
+          <button id="announceButton" type="button">📢 Enviar aviso</button>
+          <button id="clearHistoryButton" type="button" class="danger-button">🧹 Vaciar historial</button>
+        </div>
+        <p class="hint">Las acciones administrativas se ejecutan en el servidor.</p>
+      </div>
     </dialog>
   </main>
 
