@@ -3,15 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="LUMA">
-  <title>LUMA</title>
+  <meta name="description" content="Servidor Escolar Chat">
+  <title>Servidor Escolar Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="app-shell">
-    <section class="chat-card" aria-label="LUMA">
-      <h1 style="font-size: clamp(6rem, 25vw, 18rem); line-height: .8; margin: 0; text-align: center; font-weight: 900; letter-spacing: -0.08em;">LUMA</h1>
+    <section class="chat-card" aria-label="Servidor Escolar Chat">
+      <header class="chat-header">
+        <div>
+          <h1>💬 Servidor Escolar</h1>
+          <p id="connectionStatus" class="status status-offline">🔴 Desconectado</p>
+        </div>
+        <button id="changeNameButton" class="secondary-button" type="button">Cambiar nombre</button>
+      </header>
+
+      <div id="namePanel" class="name-panel">
+        <form id="nameForm" class="name-form">
+          <label for="nameInput">¿Cómo te llamás?</label>
+          <div class="name-row">
+            <input id="nameInput" name="name" type="text" maxlength="24" autocomplete="nickname" placeholder="Gotti23b" required>
+            <button type="submit">Entrar</button>
+          </div>
+          <p class="hint">Tu nombre se guarda solamente en este navegador.</p>
+        </form>
+      </div>
+
+      <section id="chatPanel" class="chat-panel hidden">
+        <div id="messages" class="messages" aria-live="polite" aria-label="Mensajes del chat"></div>
+        <form id="messageForm" class="message-form">
+          <label class="sr-only" for="messageInput">Mensaje</label>
+          <input id="messageInput" name="message" type="text" maxlength="500" autocomplete="off" placeholder="Escribí un mensaje..." disabled>
+          <button id="sendButton" type="submit" disabled>Enviar</button>
+        </form>
+        <p id="errorMessage" class="error-message" role="alert"></p>
+      </section>
     </section>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
 </body>
 </html>
