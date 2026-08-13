@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Chat grupal experimental en tiempo real">
   <title>Chat Grupal</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=admin2">
 </head>
 <body>
   <main class="app-shell">
@@ -82,6 +82,25 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=admin2"></script>
+  <script>
+    // Fallback independiente: el botón Admin puede abrirse aunque otra parte de app.js falle.
+    (() => {
+      const button = document.getElementById('adminButton');
+      const dialog = document.getElementById('adminDialog');
+      const close = document.getElementById('closeAdminButton');
+      if (!button || !dialog) return;
+      button.addEventListener('click', () => {
+        if (typeof dialog.showModal === 'function') {
+          if (!dialog.open) dialog.showModal();
+        } else {
+          dialog.setAttribute('open', '');
+        }
+        const input = document.getElementById('adminCodeInput');
+        if (input) setTimeout(() => input.focus(), 50);
+      });
+      if (close) close.addEventListener('click', () => dialog.close ? dialog.close() : dialog.removeAttribute('open'));
+    })();
+  </script>
 </body>
 </html>
